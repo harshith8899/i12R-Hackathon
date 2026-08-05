@@ -1,0 +1,8 @@
+| Metric            | Current               | Target                |
+| ----------------- | -------               | --------------------- |
+| TypeScript Errors | ?                     | 0                     |
+| ESLint Errors     | ?                     | 0                     |
+| Duplicate Logic   | bookings.ts           | Minimized             |
+| Files > 500 Lines | ?                     | 0 (or justified)      |
+| Test Coverage     | ?                     | >80% (long-term goal) |
+| Build Time        | Measure               | Maintain or improve   |

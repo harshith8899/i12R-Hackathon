@@ -1,0 +1,11 @@
+Authentication
+Members
+Bookings
+Trainer
+Schedule
+Notifications
+Payments
+Waitlist
+Admin
+Kiosk
+Reports
