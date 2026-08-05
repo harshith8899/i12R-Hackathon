@@ -1,7 +1,7 @@
 "use client";
 
-import { trpc } from "@/lib/trpc";
-import { formatDate, formatDateTime } from "@/lib/format";
+import { trpc } from "@/shared/lib/trpc";
+import { formatDate, formatDateTime } from "@/shared/lib/format";
 
 export default function AdminAttendancePage() {
   const { data: user } = trpc.auth.me.useQuery();

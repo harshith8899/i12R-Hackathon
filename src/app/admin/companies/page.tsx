@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { trpc } from "@/lib/trpc";
-import { formatMoney } from "@/lib/format";
+import { trpc } from "@/shared/lib/trpc";
+import { formatMoney } from "@/shared/lib/format";
 
 export default function CompaniesPage() {
   const { data: companies, isLoading, refetch } = trpc.adminCompanies.list.useQuery();

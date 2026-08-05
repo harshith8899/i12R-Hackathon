@@ -1,7 +1,7 @@
 "use client";
 
-import { trpc } from "@/lib/trpc";
-import { formatDateTime } from "@/lib/format";
+import { trpc } from "@/shared/lib/trpc";
+import { formatDateTime } from "@/shared/lib/format";
 
 export default function WaitlistPage() {
   const utils = trpc.useUtils();

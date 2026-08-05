@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { trpc } from "@/lib/trpc";
+import { trpc } from "@/shared/lib/trpc";
 
 export default function LoginPage() {
   const router = useRouter();

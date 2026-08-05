@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { trpc } from "@/lib/trpc";
-import { formatDateTime } from "@/lib/format";
+import { trpc } from "@/shared/lib/trpc";
+import { formatDateTime } from "@/shared/lib/format";
 
 function ClassCard({ classId, className, startsAt, room, durationMin, cancelled }: { classId: number; className: string; startsAt: string; room: string; durationMin: number; cancelled: boolean }) {
   const { data: roster, isLoading: rosterLoading } = trpc.bookings.rosterFor.useQuery({ classId });

@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { trpc } from "@/lib/trpc";
-import { formatDateTime } from "@/lib/format";
+import { trpc } from "@/shared/lib/trpc";
+import { formatDateTime } from "@/shared/lib/format";
 
 export default function KioskPage() {
   const { data: user } = trpc.auth.me.useQuery();

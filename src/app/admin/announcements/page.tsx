@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { trpc } from "@/lib/trpc";
+import { trpc } from "@/shared/lib/trpc";
 
 export default function AnnouncementsPage() {
   const [title, setTitle] = useState("");

@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { trpc } from "@/lib/trpc";
-import { formatMoney, formatDateTime } from "@/lib/format";
+import { trpc } from "@/shared/lib/trpc";
+import { formatMoney, formatDateTime } from "@/shared/lib/format";
 
 export default function AdminPage() {
   const { data: stats, isLoading, error } = trpc.admin.stats.useQuery(undefined, {

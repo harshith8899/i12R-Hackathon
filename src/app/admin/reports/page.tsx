@@ -1,7 +1,7 @@
 "use client";
 
-import { trpc } from "@/lib/trpc";
-import { formatMoney, formatDate } from "@/lib/format";
+import { trpc } from "@/shared/lib/trpc";
+import { formatMoney, formatDate } from "@/shared/lib/format";
 
 export default function AdminReportsPage() {
   const { data: revenueByMonth, isLoading: monthLoading } =

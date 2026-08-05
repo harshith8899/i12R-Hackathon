@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { trpc } from "@/lib/trpc";
+import { trpc } from "@/shared/lib/trpc";
 
 export function NavBar() {
   const router = useRouter();

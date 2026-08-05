@@ -1,7 +1,7 @@
 "use client";
 
-import { trpc } from "@/lib/trpc";
-import { formatMoney } from "@/lib/format";
+import { trpc } from "@/shared/lib/trpc";
+import { formatMoney } from "@/shared/lib/format";
 
 export default function PlansPage() {
   const utils = trpc.useUtils();

@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { trpc } from "@/lib/trpc";
-import { formatDate, formatDateTime } from "@/lib/format";
-import { RescheduleModal } from "@/components/reschedule-modal";
+import { trpc } from "@/shared/lib/trpc";
+import { formatDate, formatDateTime } from "@/shared/lib/format";
+import { RescheduleModal } from "@/shared/components/reschedule-modal";
 
 export default function DashboardPage() {
   const [rescheduleModal, setRescheduleModal] = useState<{
