@@ -15,7 +15,7 @@ import {
   corporateBookings,
   reschedules,
 } from "./schema";
-import { hashPassword } from "../shared/lib/password";
+import { hashPassword } from "@/server/services/password";
 
 function daysFromNow(n: number): string {
   const d = new Date();
