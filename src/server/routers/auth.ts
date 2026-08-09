@@ -4,7 +4,7 @@ import { eq } from "drizzle-orm";
 import { randomBytes } from "node:crypto";
 import { cookies } from "next/headers";
 import { users, sessions } from "@/db/schema";
-import { verifyPassword, hashPassword } from "@/shared/lib/password";
+import { verifyPassword, hashPassword } from "@/server/services/password";
 import {
   router,
   publicProcedure,
