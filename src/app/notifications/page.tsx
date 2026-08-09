@@ -1,7 +1,7 @@
 "use client";
 
 import { trpc } from "@/shared/lib/trpc";
-import { formatDateTime } from "@/shared/lib/format";
+import { formatDateTime } from "@/shared/utils/format";
 
 export default function NotificationsPage() {
   const { data: notifications, isLoading, error } = trpc.notifications.list.useQuery(

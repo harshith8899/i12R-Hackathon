@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { trpc } from "@/shared/lib/trpc";
-import { formatDate, formatDateTime } from "@/shared/lib/format";
+import { formatDate, formatDateTime } from "@/shared/utils/format";
 import { RescheduleModal } from "@/shared/components/reschedule-modal";
 
 export default function DashboardPage() {

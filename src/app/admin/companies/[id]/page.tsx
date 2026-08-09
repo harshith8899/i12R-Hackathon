@@ -3,7 +3,7 @@
 import { useParams } from "next/navigation";
 import { useState } from "react";
 import { trpc } from "@/shared/lib/trpc";
-import { formatDateTime } from "@/shared/lib/format";
+import { formatDateTime } from "@/shared/utils/format";
 
 export default function CompanyDetailsPage() {
   const params = useParams();
