@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { trpc } from "@/shared/lib/trpc";
-import { formatMoney, formatDateTime } from "@/shared/lib/format";
+import { formatMoney, formatDateTime } from "@/shared/utils/format";
 
 export default function AdminPage() {
   const { data: stats, isLoading, error } = trpc.admin.stats.useQuery(undefined, {
