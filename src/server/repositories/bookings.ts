@@ -1,5 +1,12 @@
 import { and, asc, desc, eq, inArray, sql } from "drizzle-orm";
-import { bookings, classes, memberships, checkins, users } from "@/db/schema";
+import {
+  bookings,
+  classes,
+  memberships,
+  checkins,
+  users,
+  corporateBookings,
+} from "@/db/schema";
 import type { Booking } from "@/db/schema";
 
 type Db = typeof import("@/db").db;
@@ -64,6 +71,30 @@ export async function countBookedForClass(db: Database, classId: number) {
     .from(bookings)
     .where(and(eq(bookings.classId, classId), eq(bookings.status, "booked")));
   return Number(count);
+}
+
+/**
+ * A class has one physical capacity shared across personal and corporate
+ * bookings — this is the combined confirmed ("booked") occupancy across both
+ * tables, used wherever fullness must be checked against classes.capacity.
+ */
+export async function countCombinedBookedForClass(db: Database, classId: number) {
+  const [{ count: personalCount }] = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(bookings)
+    .where(and(eq(bookings.classId, classId), eq(bookings.status, "booked")));
+
+  const [{ count: corporateCount }] = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(corporateBookings)
+    .where(
+      and(
+        eq(corporateBookings.classId, classId),
+        eq(corporateBookings.status, "booked"),
+      ),
+    );
+
+  return Number(personalCount) + Number(corporateCount);
 }
 
 export async function createBooking(

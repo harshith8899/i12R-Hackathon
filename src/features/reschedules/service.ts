@@ -1,5 +1,6 @@
 import * as bookingsRepo from "@/server/repositories/bookings";
 import * as reschedulesRepo from "@/server/repositories/reschedules";
+import { UNLIMITED_CREDITS } from "@/features/bookings/service";
 
 /**
  * Members may reschedule free of charge up to this many hours before the
@@ -136,8 +137,9 @@ export async function checkRescheduleEligibility(
     );
   }
 
-  // Check if target class is full
-  const bookedCount = await bookingsRepo.countBookedForClass(
+  // Check if target class is full (personal + corporate confirmed bookings
+  // share the same physical capacity)
+  const bookedCount = await bookingsRepo.countCombinedBookedForClass(
     ctx.db,
     targetClass.id,
   );
@@ -158,16 +160,54 @@ export async function rescheduleBooking(
   ctx: RescheduleServiceContext,
   input: { fromBookingId: number; toClassId: number },
 ) {
-  const { originalBooking, originalClass, targetClass, targetIsFull } =
+  const { originalBooking, originalClass, targetClass, targetIsFull, membership } =
     await checkRescheduleEligibility(ctx, input);
 
-  // Create the new booking (don't charge credits, they keep what they spent)
+  const newStatus = targetIsFull ? "waitlisted" : "booked";
+
+  // If the original booking already paid (status "booked"), that credit
+  // follows it to the new booking regardless of target capacity — no new
+  // charge. If the original was waitlisted (never charged), a charge is only
+  // due now if the reschedule lands on a confirmed ("booked") spot.
+  const originalWasPaid = originalBooking.status === "booked";
+  const mustChargeNow = !originalWasPaid && newStatus === "booked";
+
+  let creditsUsed = originalBooking.creditsUsed;
+
+  if (mustChargeNow) {
+    if (!membership) {
+      throw new RescheduleServiceError(
+        "FORBIDDEN",
+        "An active membership is required to book classes.",
+      );
+    }
+
+    const unlimited = membership.creditsRemaining >= UNLIMITED_CREDITS;
+    if (!unlimited && membership.creditsRemaining < targetClass.creditCost) {
+      throw new RescheduleServiceError(
+        "FORBIDDEN",
+        "Not enough class credits remaining.",
+      );
+    }
+
+    creditsUsed = targetClass.creditCost;
+
+    if (!unlimited) {
+      await bookingsRepo.updateMembershipCredits(
+        ctx.db,
+        membership.id,
+        membership.creditsRemaining - targetClass.creditCost,
+      );
+    }
+  }
+
+  // Create the new booking
   const newBooking = await bookingsRepo.createBooking(ctx.db, {
     classId: targetClass.id,
     userId: ctx.user.id,
     membershipId: originalBooking.membershipId,
-    status: targetIsFull ? "waitlisted" : "booked",
-    creditsUsed: originalBooking.creditsUsed, // Keep the same credits used
+    status: newStatus,
+    creditsUsed,
   });
 
   // Cancel the original booking
@@ -188,6 +228,6 @@ export async function rescheduleBooking(
   return {
     ok: true,
     newBooking,
-    newStatus: targetIsFull ? "waitlisted" : "booked",
+    newStatus,
   };
 }

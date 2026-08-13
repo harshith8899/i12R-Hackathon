@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { and, asc, eq, gte, lte, sql } from "drizzle-orm";
-import { classes, bookings, users } from "@/db/schema";
+import { classes, bookings, users, corporateBookings } from "@/db/schema";
 import { router, publicProcedure, staffProcedure, adminProcedure } from "../trpc";
 import { cancelClass, ClassServiceError } from "@/features/classes/service";
 
@@ -38,6 +38,10 @@ export const classesRouter = router({
             select count(*) from ${bookings}
             where ${bookings.classId} = ${classes.id}
               and ${bookings.status} = 'booked'
+          ) + (
+            select count(*) from ${corporateBookings}
+            where ${corporateBookings.classId} = ${classes.id}
+              and ${corporateBookings.status} = 'booked'
           )`.as("booked"),
         })
         .from(classes)

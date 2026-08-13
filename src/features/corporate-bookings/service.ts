@@ -91,7 +91,7 @@ export async function bookCorporateBooking(
     );
   }
 
-  const bookedCount = await corporateBookingsRepo.countCorporateBookedForClass(
+  const bookedCount = await bookingsRepo.countCombinedBookedForClass(
     ctx.db,
     cls.id,
   );
@@ -169,12 +169,22 @@ export async function cancelCorporateBooking(
     }
   }
 
-  // Freeing a confirmed spot promotes the member who has waited longest.
+  // Freeing a confirmed spot promotes the member who has waited longest —
+  // only if the shared physical capacity actually has room (personal
+  // bookings can occupy the seat this corporate cancellation just freed).
   if (row.booking.status === "booked") {
-    const next = await corporateBookingsRepo.findNextWaitlistedCorporateBooking(
+    const combinedBooked = await bookingsRepo.countCombinedBookedForClass(
       ctx.db,
       row.cls.id,
     );
+    const seatAvailable = combinedBooked < row.cls.capacity;
+
+    const next = seatAvailable
+      ? await corporateBookingsRepo.findNextWaitlistedCorporateBooking(
+          ctx.db,
+          row.cls.id,
+        )
+      : null;
 
     if (next) {
       await corporateBookingsRepo.updateCorporateBooking(ctx.db, next.id, {
