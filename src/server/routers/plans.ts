@@ -1,14 +1,9 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { eq } from "drizzle-orm";
-import { membershipPlans, memberships, payments } from "@/db/schema";
+import { membershipPlans } from "@/db/schema";
+import { subscribeToPlan, PlanServiceError } from "@/features/plans/service";
 import { router, publicProcedure, protectedProcedure, adminProcedure } from "../trpc";
-
-function addDays(dateIso: string, days: number): string {
-  const d = new Date(dateIso);
-  d.setDate(d.getDate() + days);
-  return d.toISOString().slice(0, 10);
-}
 
 export const plansRouter = router({
   list: publicProcedure
@@ -26,47 +21,26 @@ export const plansRouter = router({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const plan = await ctx.db
-        .select()
-        .from(membershipPlans)
-        .where(eq(membershipPlans.id, input.planId))
-        .get();
-
-      if (!plan) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Plan not found." });
+      try {
+        return await subscribeToPlan(
+          {
+            db: ctx.db,
+            user: ctx.user,
+          },
+          {
+            planId: input.planId,
+            method: input.method,
+          },
+        );
+      } catch (error) {
+        if (error instanceof PlanServiceError) {
+          throw new TRPCError({
+            code: error.code,
+            message: error.message,
+          });
+        }
+        throw error;
       }
-      if (!plan.active) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "This plan is no longer available.",
-        });
-      }
-
-      const today = new Date().toISOString().slice(0, 10);
-
-      const membership = await ctx.db
-        .insert(memberships)
-        .values({
-          userId: ctx.user.id,
-          planId: plan.id,
-          startDate: today,
-          endDate: addDays(today, plan.durationDays),
-          creditsRemaining: plan.classCredits,
-          status: "active",
-        })
-        .returning()
-        .get();
-
-      await ctx.db.insert(payments).values({
-        userId: ctx.user.id,
-        membershipId: membership.id,
-        amountCents: plan.priceCents,
-        method: input.method,
-        status: "paid",
-        reference: `PAY-${Date.now()}`,
-      });
-
-      return membership;
     }),
 
   create: adminProcedure

@@ -1,8 +1,9 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { and, asc, eq, gte, lte, sql } from "drizzle-orm";
-import { classes, bookings, users } from "@/db/schema";
+import { classes, bookings, users, corporateBookings } from "@/db/schema";
 import { router, publicProcedure, staffProcedure, adminProcedure } from "../trpc";
+import { cancelClass, ClassServiceError } from "@/features/classes/service";
 
 export const classesRouter = router({
   list: publicProcedure
@@ -37,6 +38,10 @@ export const classesRouter = router({
             select count(*) from ${bookings}
             where ${bookings.classId} = ${classes.id}
               and ${bookings.status} = 'booked'
+          ) + (
+            select count(*) from ${corporateBookings}
+            where ${corporateBookings.classId} = ${classes.id}
+              and ${corporateBookings.status} = 'booked'
           )`.as("booked"),
         })
         .from(classes)
@@ -132,24 +137,13 @@ export const classesRouter = router({
   cancel: adminProcedure
     .input(z.object({ id: z.number() }))
     .mutation(async ({ ctx, input }) => {
-      const cls = await ctx.db
-        .update(classes)
-        .set({ cancelled: true })
-        .where(eq(classes.id, input.id))
-        .returning()
-        .get();
-
-      if (!cls) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Class not found." });
+      try {
+        return await cancelClass({ db: ctx.db }, { classId: input.id });
+      } catch (error) {
+        if (error instanceof ClassServiceError) {
+          throw new TRPCError({ code: error.code, message: error.message });
+        }
+        throw error;
       }
-
-      await ctx.db
-        .update(bookings)
-        .set({ status: "cancelled", cancelledAt: new Date().toISOString() })
-        .where(
-          and(eq(bookings.classId, input.id), eq(bookings.status, "booked")),
-        );
-
-      return cls;
     }),
 });

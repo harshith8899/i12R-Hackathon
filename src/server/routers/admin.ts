@@ -8,6 +8,7 @@ import {
   payments,
   checkins,
   membershipPlans,
+  corporateBookings,
 } from "@/db/schema";
 import { router, adminProcedure } from "../trpc";
 
@@ -73,6 +74,10 @@ export const adminRouter = router({
             select count(*) from ${bookings}
             where ${bookings.classId} = ${classes.id}
               and ${bookings.status} in ('booked','attended')
+          ) + (
+            select count(*) from ${corporateBookings}
+            where ${corporateBookings.classId} = ${classes.id}
+              and ${corporateBookings.status} in ('booked','attended')
           )`.as("booked"),
         })
         .from(classes)

@@ -9,6 +9,7 @@ import {
   classes,
 } from "@/db/schema";
 import { router, adminProcedure } from "../trpc";
+import { findCompanyById } from "@/server/repositories/corporate-bookings";
 
 export const adminCompaniesRouter = router({
   list: adminProcedure.query(async ({ ctx }) => {
@@ -122,11 +123,7 @@ export const adminCompaniesRouter = router({
   topUp: adminProcedure
     .input(z.object({ id: z.number(), amount: z.number().int().positive() }))
     .mutation(async ({ ctx, input }) => {
-      const company = await ctx.db
-        .select()
-        .from(companies)
-        .where(eq(companies.id, input.id))
-        .get();
+      const company = await findCompanyById(ctx.db, input.id);
 
       if (!company) {
         throw new TRPCError({ code: "NOT_FOUND", message: "Company not found." });
