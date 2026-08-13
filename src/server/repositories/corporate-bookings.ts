@@ -9,7 +9,26 @@ import {
 } from "@/db/schema";
 import type { CorporateBooking } from "@/db/schema";
 
-type Database = typeof import("@/db").db;
+type Db = typeof import("@/db").db;
+type Tx = Parameters<Db["transaction"]>[0] extends (tx: infer T) => unknown
+  ? T
+  : never;
+type Database = Db | Tx;
+
+export async function findActiveCorporateBookingsForClass(
+  db: Database,
+  classId: number,
+) {
+  return db
+    .select()
+    .from(corporateBookings)
+    .where(
+      and(
+        eq(corporateBookings.classId, classId),
+        inArray(corporateBookings.status, ["booked", "waitlisted"]),
+      ),
+    );
+}
 
 export async function findUserCorporateBookingsWithClass(
   db: Database,

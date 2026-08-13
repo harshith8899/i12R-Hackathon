@@ -2,10 +2,26 @@ import { and, asc, desc, eq, inArray, sql } from "drizzle-orm";
 import { bookings, classes, memberships, checkins, users } from "@/db/schema";
 import type { Booking } from "@/db/schema";
 
-type Database = typeof import("@/db").db;
+type Db = typeof import("@/db").db;
+type Tx = Parameters<Db["transaction"]>[0] extends (tx: infer T) => unknown
+  ? T
+  : never;
+type Database = Db | Tx;
 
 export async function findClassById(db: Database, classId: number) {
   return db.select().from(classes).where(eq(classes.id, classId)).get();
+}
+
+export async function findActiveBookingsForClass(db: Database, classId: number) {
+  return db
+    .select()
+    .from(bookings)
+    .where(
+      and(
+        eq(bookings.classId, classId),
+        inArray(bookings.status, ["booked", "waitlisted"]),
+      ),
+    );
 }
 
 export async function findActiveBookingForUserAndClass(
