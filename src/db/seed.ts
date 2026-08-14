@@ -229,8 +229,17 @@ async function seed() {
     ["Advanced Spin", "Spin Room", 20, 2, 6],
   ];
 
+  // Class dates are generated relative to whenever this script runs, not to
+  // real time at app-load. A short lookahead means the schedule (filtered to
+  // startsAt >= now) silently empties out a couple of weeks after the last
+  // seed run. Widen the forward window well past any reasonable gap between
+  // seed runs so re-seeding stays effective for longer without needing a
+  // cron/scheduled reseed.
+  const CLASS_HISTORY_DAYS = 3;
+  const CLASS_LOOKAHEAD_DAYS = 30;
+
   const classRows: (typeof classes.$inferInsert)[] = [];
-  for (let day = -3; day <= 14; day++) {
+  for (let day = -CLASS_HISTORY_DAYS; day <= CLASS_LOOKAHEAD_DAYS; day++) {
     classTemplates.forEach((tpl, idx) => {
       const [name, room, capacity, creditCost, hour] = tpl as [
         string,
