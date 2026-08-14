@@ -1,7 +1,8 @@
 "use client";
 
+import Link from "next/link";
 import { trpc } from "@/shared/lib/trpc";
-import { formatMoney } from "@/shared/utils/format";
+import { formatMoney, formatDate } from "@/shared/utils/format";
 
 export default function PlansPage() {
   const utils = trpc.useUtils();
@@ -27,10 +28,28 @@ export default function PlansPage() {
         </p>
       )}
 
-      {subscribe.isSuccess && (
-        <p className="panel p-3 text-sm" style={{ color: "var(--accent)" }}>
-          Membership activated.
-        </p>
+      {subscribe.isSuccess && subscribe.data && (
+        <div className="panel space-y-3 p-4 text-sm">
+          <p style={{ color: "var(--accent)" }}>
+            Membership activated
+            {plans?.find((p) => p.id === subscribe.data.planId)
+              ? ` — ${plans.find((p) => p.id === subscribe.data.planId)!.name}`
+              : ""}
+            . You have{" "}
+            {subscribe.data.creditsRemaining >= 999
+              ? "unlimited classes"
+              : `${subscribe.data.creditsRemaining} credits`}{" "}
+            until {formatDate(subscribe.data.endDate)}.
+          </p>
+          <div className="flex gap-2">
+            <Link href="/dashboard" className="btn btn-sm">
+              View my membership
+            </Link>
+            <Link href="/schedule" className="btn btn-primary btn-sm">
+              Browse classes
+            </Link>
+          </div>
+        </div>
       )}
 
       <div className="grid gap-4 sm:grid-cols-2">
