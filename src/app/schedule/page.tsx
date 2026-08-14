@@ -14,6 +14,7 @@ export default function SchedulePage() {
     onSuccess: async () => {
       await utils.classes.list.invalidate();
       await utils.bookings.mine.invalidate();
+      await utils.members.profile.invalidate();
     },
   });
 
@@ -31,6 +32,14 @@ export default function SchedulePage() {
       {book.error && (
         <p className="panel p-3 text-sm" style={{ color: "#f87171" }}>
           {book.error.message}
+        </p>
+      )}
+
+      {book.isSuccess && book.data && (
+        <p className="panel p-3 text-sm" style={{ color: "var(--accent)" }}>
+          {book.data.status === "waitlisted"
+            ? `You're on the waitlist for ${classes?.find((c) => c.id === book.data.classId)?.name ?? "this class"}.`
+            : `Booked ${classes?.find((c) => c.id === book.data.classId)?.name ?? "this class"}!`}
         </p>
       )}
 
