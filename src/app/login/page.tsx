@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { trpc } from "@/shared/lib/trpc";
 
@@ -64,6 +65,13 @@ export default function LoginPage() {
           {login.isPending ? "Signing in..." : "Sign in"}
         </button>
       </form>
+
+      <p className="text-sm muted">
+        New here?{" "}
+        <Link href="/register" className="hover:text-white" style={{ color: "var(--text)" }}>
+          Create an account
+        </Link>
+      </p>
 
       <div className="panel p-4 text-sm muted">
         <p className="mb-2 font-medium" style={{ color: "var(--text)" }}>
