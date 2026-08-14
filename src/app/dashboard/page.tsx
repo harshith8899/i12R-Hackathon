@@ -72,6 +72,14 @@ export default function DashboardPage() {
               <dd>{ms.creditsRemaining >= 999 ? "Unlimited" : ms.creditsRemaining}</dd>
             </div>
           </dl>
+        ) : profile.role === "admin" ? (
+          <p className="muted mt-2 text-sm">
+            Staff accounts don&apos;t have a gym membership. Visit the Admin dashboard to manage the studio.
+          </p>
+        ) : profile.role === "trainer" ? (
+          <p className="muted mt-2 text-sm">
+            Staff accounts don&apos;t have a gym membership. Visit My schedule to manage your classes and availability.
+          </p>
         ) : (
           <p className="muted mt-2 text-sm">
             No active membership. Pick a plan to start booking classes.
