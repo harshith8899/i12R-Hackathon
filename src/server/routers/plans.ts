@@ -1,15 +1,14 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import { eq } from "drizzle-orm";
-import { membershipPlans } from "@/db/schema";
 import { subscribeToPlan, PlanServiceError } from "@/features/plans/service";
 import { router, publicProcedure, protectedProcedure, adminProcedure } from "../trpc";
+import * as plansRepo from "@/server/repositories/plans";
 
 export const plansRouter = router({
   list: publicProcedure
     .input(z.object({ includeInactive: z.boolean().default(false) }).default({}))
     .query(async ({ ctx, input }) => {
-      const rows = await ctx.db.select().from(membershipPlans);
+      const rows = await plansRepo.listPlans(ctx.db);
       return input.includeInactive ? rows : rows.filter((p) => p.active);
     }),
 
@@ -54,21 +53,15 @@ export const plansRouter = router({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      return ctx.db
-        .insert(membershipPlans)
-        .values({ ...input, description: input.description ?? null })
-        .returning()
-        .get();
+      return plansRepo.createPlan(ctx.db, {
+        ...input,
+        description: input.description ?? null,
+      });
     }),
 
   setActive: adminProcedure
     .input(z.object({ id: z.number(), active: z.boolean() }))
     .mutation(async ({ ctx, input }) => {
-      return ctx.db
-        .update(membershipPlans)
-        .set({ active: input.active })
-        .where(eq(membershipPlans.id, input.id))
-        .returning()
-        .get();
+      return plansRepo.setPlanActive(ctx.db, input.id, input.active);
     }),
 });

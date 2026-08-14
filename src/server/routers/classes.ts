@@ -1,9 +1,9 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import { and, asc, eq, gte, lte, sql } from "drizzle-orm";
-import { classes, bookings, users, corporateBookings } from "@/db/schema";
 import { router, publicProcedure, staffProcedure, adminProcedure } from "../trpc";
 import { cancelClass, ClassServiceError } from "@/features/classes/service";
+import * as classesRepo from "@/server/repositories/classes";
+import * as bookingsRepo from "@/server/repositories/bookings";
 
 export const classesRouter = router({
   list: publicProcedure
@@ -17,37 +17,11 @@ export const classesRouter = router({
         .default({}),
     )
     .query(async ({ ctx, input }) => {
-      const filters = [];
-      if (input.from) filters.push(gte(classes.startsAt, input.from));
-      if (input.to) filters.push(lte(classes.startsAt, input.to));
-      if (!input.includeCancelled) filters.push(eq(classes.cancelled, false));
-
-      const rows = await ctx.db
-        .select({
-          id: classes.id,
-          name: classes.name,
-          description: classes.description,
-          room: classes.room,
-          capacity: classes.capacity,
-          startsAt: classes.startsAt,
-          durationMin: classes.durationMin,
-          creditCost: classes.creditCost,
-          cancelled: classes.cancelled,
-          trainerName: users.name,
-          booked: sql<number>`(
-            select count(*) from ${bookings}
-            where ${bookings.classId} = ${classes.id}
-              and ${bookings.status} = 'booked'
-          ) + (
-            select count(*) from ${corporateBookings}
-            where ${corporateBookings.classId} = ${classes.id}
-              and ${corporateBookings.status} = 'booked'
-          )`.as("booked"),
-        })
-        .from(classes)
-        .leftJoin(users, eq(classes.trainerId, users.id))
-        .where(filters.length ? and(...filters) : undefined)
-        .orderBy(asc(classes.startsAt));
+      const rows = await classesRepo.listClasses(ctx.db, {
+        from: input.from,
+        to: input.to,
+        includeCancelled: input.includeCancelled,
+      });
 
       return rows.map((r) => ({
         ...r,
@@ -59,26 +33,13 @@ export const classesRouter = router({
   byId: publicProcedure
     .input(z.object({ id: z.number() }))
     .query(async ({ ctx, input }) => {
-      const cls = await ctx.db
-        .select()
-        .from(classes)
-        .where(eq(classes.id, input.id))
-        .get();
+      const cls = await bookingsRepo.findClassById(ctx.db, input.id);
 
       if (!cls) {
         throw new TRPCError({ code: "NOT_FOUND", message: "Class not found." });
       }
 
-      const roster = await ctx.db
-        .select({
-          bookingId: bookings.id,
-          status: bookings.status,
-          memberName: users.name,
-          memberEmail: users.email,
-        })
-        .from(bookings)
-        .innerJoin(users, eq(bookings.userId, users.id))
-        .where(eq(bookings.classId, cls.id));
+      const roster = await classesRepo.findClassRoster(ctx.db, cls.id);
 
       return { ...cls, roster };
     }),
@@ -97,15 +58,11 @@ export const classesRouter = router({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      return ctx.db
-        .insert(classes)
-        .values({
-          ...input,
-          description: input.description ?? null,
-          trainerId: input.trainerId ?? null,
-        })
-        .returning()
-        .get();
+      return classesRepo.createClass(ctx.db, {
+        ...input,
+        description: input.description ?? null,
+        trainerId: input.trainerId ?? null,
+      });
     }),
 
   update: staffProcedure
@@ -121,12 +78,7 @@ export const classesRouter = router({
     )
     .mutation(async ({ ctx, input }) => {
       const { id, ...patch } = input;
-      const updated = await ctx.db
-        .update(classes)
-        .set(patch)
-        .where(eq(classes.id, id))
-        .returning()
-        .get();
+      const updated = await classesRepo.updateClass(ctx.db, id, patch);
 
       if (!updated) {
         throw new TRPCError({ code: "NOT_FOUND", message: "Class not found." });

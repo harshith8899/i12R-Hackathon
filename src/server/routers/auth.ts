@@ -15,7 +15,11 @@ import {
 const SESSION_DAYS = 30;
 
 export const authRouter = router({
-  me: publicProcedure.query(({ ctx }) => ctx.user),
+  me: publicProcedure.query(({ ctx }) => {
+    if (!ctx.user) return null;
+    const { passwordHash: _omit, ...safeUser } = ctx.user;
+    return safeUser;
+  }),
 
   login: publicProcedure
     .input(z.object({ email: z.string().email(), password: z.string().min(1) }))
@@ -53,6 +57,7 @@ export const authRouter = router({
       const store = await cookies();
       store.set(SESSION_COOKIE, token, {
         httpOnly: true,
+        secure: true,
         sameSite: "lax",
         path: "/",
         expires: expiresAt,

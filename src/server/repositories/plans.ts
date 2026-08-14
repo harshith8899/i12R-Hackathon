@@ -11,6 +11,32 @@ export async function findPlanById(db: Database, planId: number) {
     .get();
 }
 
+export async function listPlans(db: Database) {
+  return db.select().from(membershipPlans);
+}
+
+export async function createPlan(
+  db: Database,
+  data: {
+    name: string;
+    description: string | null;
+    priceCents: number;
+    durationDays: number;
+    classCredits: number;
+  },
+) {
+  return db.insert(membershipPlans).values(data).returning().get();
+}
+
+export async function setPlanActive(db: Database, id: number, active: boolean) {
+  return db
+    .update(membershipPlans)
+    .set({ active })
+    .where(eq(membershipPlans.id, id))
+    .returning()
+    .get();
+}
+
 export async function createMembership(
   db: Database,
   data: {
@@ -37,4 +63,11 @@ export async function createPayment(
   },
 ) {
   await db.insert(payments).values(data);
+}
+
+export async function cancelMembership(db: Database, membershipId: number) {
+  await db
+    .update(memberships)
+    .set({ status: "cancelled" })
+    .where(eq(memberships.id, membershipId));
 }
