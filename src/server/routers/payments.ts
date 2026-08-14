@@ -1,56 +1,24 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import { desc, eq } from "drizzle-orm";
-import { payments, users, memberships, membershipPlans } from "@/db/schema";
+import { refundPayment, PaymentServiceError } from "@/features/payments/service";
 import { router, protectedProcedure, adminProcedure } from "../trpc";
+import * as paymentsRepo from "@/server/repositories/payments";
 
 export const paymentsRouter = router({
   mine: protectedProcedure.query(async ({ ctx }) => {
-    return ctx.db
-      .select({
-        id: payments.id,
-        amountCents: payments.amountCents,
-        method: payments.method,
-        status: payments.status,
-        reference: payments.reference,
-        createdAt: payments.createdAt,
-        planName: membershipPlans.name,
-      })
-      .from(payments)
-      .leftJoin(memberships, eq(payments.membershipId, memberships.id))
-      .leftJoin(membershipPlans, eq(memberships.planId, membershipPlans.id))
-      .where(eq(payments.userId, ctx.user.id))
-      .orderBy(desc(payments.createdAt));
+    return paymentsRepo.findPaymentsForUser(ctx.db, ctx.user.id);
   }),
 
   all: adminProcedure
     .input(z.object({ limit: z.number().default(100) }).default({}))
     .query(async ({ ctx, input }) => {
-      return ctx.db
-        .select({
-          id: payments.id,
-          amountCents: payments.amountCents,
-          method: payments.method,
-          status: payments.status,
-          reference: payments.reference,
-          createdAt: payments.createdAt,
-          memberName: users.name,
-          memberEmail: users.email,
-        })
-        .from(payments)
-        .innerJoin(users, eq(payments.userId, users.id))
-        .orderBy(desc(payments.createdAt))
-        .limit(input.limit);
+      return paymentsRepo.findAllPayments(ctx.db, input.limit);
     }),
 
   markPaid: adminProcedure
     .input(z.object({ id: z.number() }))
     .mutation(async ({ ctx, input }) => {
-      const row = await ctx.db
-        .select()
-        .from(payments)
-        .where(eq(payments.id, input.id))
-        .get();
+      const row = await paymentsRepo.findPaymentById(ctx.db, input.id);
 
       if (!row) {
         throw new TRPCError({ code: "NOT_FOUND", message: "Payment not found." });
@@ -62,47 +30,19 @@ export const paymentsRouter = router({
         });
       }
 
-      return ctx.db
-        .update(payments)
-        .set({ status: "paid" })
-        .where(eq(payments.id, input.id))
-        .returning()
-        .get();
+      return paymentsRepo.markPaymentPaid(ctx.db, input.id);
     }),
 
   refund: adminProcedure
     .input(z.object({ id: z.number() }))
     .mutation(async ({ ctx, input }) => {
-      const row = await ctx.db
-        .select()
-        .from(payments)
-        .where(eq(payments.id, input.id))
-        .get();
-
-      if (!row) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Payment not found." });
+      try {
+        return await refundPayment({ db: ctx.db }, { paymentId: input.id });
+      } catch (error) {
+        if (error instanceof PaymentServiceError) {
+          throw new TRPCError({ code: error.code, message: error.message });
+        }
+        throw error;
       }
-      if (row.status !== "paid") {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "Only paid payments can be refunded.",
-        });
-      }
-
-      const updated = await ctx.db
-        .update(payments)
-        .set({ status: "refunded" })
-        .where(eq(payments.id, input.id))
-        .returning()
-        .get();
-
-      if (row.membershipId) {
-        await ctx.db
-          .update(memberships)
-          .set({ status: "cancelled" })
-          .where(eq(memberships.id, row.membershipId));
-      }
-
-      return updated;
     }),
 });

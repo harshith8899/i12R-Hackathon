@@ -64,3 +64,10 @@ export async function createPayment(
 ) {
   await db.insert(payments).values(data);
 }
+
+export async function cancelMembership(db: Database, membershipId: number) {
+  await db
+    .update(memberships)
+    .set({ status: "cancelled" })
+    .where(eq(memberships.id, membershipId));
+}
