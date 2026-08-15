@@ -64,6 +64,8 @@ export const adminRouter = router({
   classUtilisation: adminProcedure
     .input(z.object({ limit: z.number().default(10) }).default({}))
     .query(async ({ ctx, input }) => {
+      const now = new Date().toISOString();
+
       const rows = await ctx.db
         .select({
           id: classes.id,
@@ -81,7 +83,9 @@ export const adminRouter = router({
           )`.as("booked"),
         })
         .from(classes)
-        .where(eq(classes.cancelled, false))
+        .leftJoin(users, eq(classes.trainerId, users.id))
+        .where(and(eq(classes.cancelled, false), gte(classes.startsAt, now)))
+        .orderBy(classes.startsAt)
         .limit(input.limit);
 
       return rows.map((r) => ({
