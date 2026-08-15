@@ -25,7 +25,21 @@ export default function DashboardPage() {
     retry: false,
   });
   const { data: bookings } = trpc.bookings.mine.useQuery({ includePast: false });
+  const { data: allBookings } = trpc.bookings.mine.useQuery({ includePast: true });
   const { data: rescheduleHistory } = trpc.reschedules.history.useQuery();
+
+  const classHistory = (allBookings ?? [])
+    .filter((b) => new Date(b.startsAt) < new Date())
+    .sort((a, b) => new Date(b.startsAt).getTime() - new Date(a.startsAt).getTime())
+    .slice(0, 10);
+
+  const statusStyle: Record<string, { label: string; color: string }> = {
+    attended: { label: "Attended", color: "#4ade80" },
+    no_show: { label: "No-show", color: "#f87171" },
+    cancelled: { label: "Cancelled", color: "var(--muted)" },
+    booked: { label: "Booked", color: "var(--fg)" },
+    waitlisted: { label: "Waitlisted", color: "var(--muted)" },
+  };
 
   const cancel = trpc.bookings.cancel.useMutation({
     onSuccess: async () => {
@@ -178,6 +192,32 @@ export default function DashboardPage() {
           </div>
         </section>
       )}
+
+      <section className="space-y-3">
+        <h2 className="font-medium">Class history</h2>
+        {classHistory.length > 0 ? (
+          <div className="panel divide-y" style={{ borderColor: "var(--border)" }}>
+            {classHistory.map((b) => {
+              const style = statusStyle[b.status] ?? { label: b.status, color: "var(--fg)" };
+              return (
+                <div key={b.id} className="flex items-center justify-between p-3 text-sm">
+                  <div>
+                    <div className="font-medium">{b.className}</div>
+                    <div className="muted text-xs mt-0.5">
+                      {formatDateTime(b.startsAt)} &middot; {b.room}
+                    </div>
+                  </div>
+                  <span className="text-xs uppercase tracking-wide" style={{ color: style.color }}>
+                    {style.label}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <p className="muted text-sm">No past classes yet.</p>
+        )}
+      </section>
 
       <RescheduleModal
         isOpen={rescheduleModal.isOpen}
