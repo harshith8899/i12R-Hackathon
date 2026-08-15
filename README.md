@@ -1,7 +1,7 @@
 ## Hackathon Fixes & Improvements
 
 This project was provided as an existing fitness studio application
-with multiple broken and incomplete user journeys. We analyzed the
+with multiple broken and incomplete user journeys. I analyzed the
 existing implementation, identified the root causes, and applied
 minimal targeted fixes without redesigning the application's
 architecture or introducing unnecessary features.
