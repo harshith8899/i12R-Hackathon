@@ -1,4 +1,4 @@
-## Hackathon Fixes & Improvements
+## project 1 Fixes & Improvements (GYM Management)
 
 This project was provided as an existing fitness studio application
 with multiple broken and incomplete user journeys. I analyzed the
