@@ -25,12 +25,11 @@ export function RescheduleModal({
   const [error, setError] = useState<string | null>(null);
 
   const utils = trpc.useUtils();
+  const [from] = useState(() => new Date().toISOString());
 
   // Get available classes with the same name
   const { data: availableClasses } = trpc.classes.list.useQuery(
-    {
-      from: new Date().toISOString(),
-    },
+    { from },
     {
       enabled: isOpen,
     }

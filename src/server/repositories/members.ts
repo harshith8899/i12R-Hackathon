@@ -97,6 +97,11 @@ export async function findUserByEmailOrPhone(db: Database, query: string) {
       active: users.active,
     })
     .from(users)
-    .where(or(like(users.email, term), like(users.phone, term)))
+    .where(
+      and(
+        eq(users.role, "member"),
+        or(like(users.email, term), like(users.phone, term)),
+      ),
+    )
     .get();
 }
