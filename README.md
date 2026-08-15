@@ -1,66 +1,94 @@
-# FlexFit Studio
+## Hackathon Fixes & Improvements
 
-Class booking and membership management for a single gym site. Members book classes, buy memberships and spend class credits. Staff run the front desk, manage trainers and pull reports. Companies buy credit pools their employees book against.
+This project was provided as an existing fitness studio application
+with multiple broken and incomplete user journeys. We analyzed the
+existing implementation, identified the root causes, and applied
+minimal targeted fixes without redesigning the application's
+architecture or introducing unnecessary features.
 
-## Requirements
+### Key Fixes
 
-Node 20 or newer, and pnpm. If you don't have pnpm:
+#### Schedule Stability
+- Fixed an infinite request loop on the schedule page caused by an
+  unstable `classes.list` query input.
+- Stabilized the timestamp used by the React Query input.
+- Schedule now loads normally without repeated API requests.
 
-```bash
-npm install -g pnpm
-```
+#### Rescheduling
+- Fixed the same unstable query-key issue in the reschedule modal.
+- Members can now select available alternative classes and complete
+  the reschedule flow successfully.
 
-The database is SQLite and lives in a file. There's no server to install and no account to create.
+#### Kiosk & Attendance
+- Fixed member lookup so the kiosk only searches member accounts.
+- Staff can search for a member and check them into an upcoming class.
+- Attendance is reflected across the kiosk, trainer roster, admin
+  reporting, and member class history.
 
-## Getting set up
+#### Admin Class Utilisation
+- Fixed the admin utilisation widget to use upcoming classes.
+- Corrected the booking-count query so utilisation percentages are
+  calculated from the correct class.
+- Admin dashboard now displays meaningful utilisation data.
 
-```bash
-pnpm install
-pnpm db:push
-pnpm db:seed
-pnpm dev
-```
+#### Authentication & Security
+- Prevented `passwordHash` from being returned by `auth.me`.
+- Enabled secure session cookies.
+- Added the member registration flow while preserving the existing
+  authentication architecture.
 
-That gets you a populated studio at http://localhost:3000 with a couple of weeks of classes either side of today.
+#### Membership & Booking
+- Improved subscription success feedback.
+- Added navigation from successful subscription to membership and
+  schedule views.
+- Booking success feedback was added.
+- Member credit information is refreshed after booking.
 
-`db:push` creates `flexfit.db` and applies the schema. `db:seed` fills it with sample members, plans, classes and bookings.
+#### Waitlist
+- Verified the complete waitlist lifecycle:
+  - Full class → Join waitlist
+  - No credit deduction while waitlisted
+  - Seat becomes available
+  - Automatic promotion to booked
+  - Credits deducted only after promotion
+  - Member can leave the waitlist
 
-## Signing in
+#### Member Experience
+- Added role-specific dashboard messaging.
+- Added member class attendance history.
+- Extended seeded class availability so the schedule remains populated
+  for a longer period.
 
-| Role    | Email                  | Password   |
-| ------- | ---------------------- | ---------- |
-| Admin   | admin@flexfit.test     | admin123   |
-| Trainer | arjun@flexfit.test     | trainer123 |
-| Member  | rahul.k@example.com    | member123  |
+### Validation
 
-Every seeded member uses `member123`. The other member emails are in `src/db/seed.ts`.
+The major user journeys were tested end-to-end:
 
-## Commands
+- Member registration and login
+- Membership subscription
+- Class scheduling
+- Booking
+- Rescheduling
+- Cancellation
+- Waitlist and promotion
+- Kiosk check-in
+- Attendance history
+- Trainer roster
+- Admin dashboard
+- Corporate management
+- Notifications
+- Role-based access control
 
-| Command         | What it does                                      |
-| --------------- | ------------------------------------------------- |
-| `pnpm dev`      | Development server on port 3000                    |
-| `pnpm build`    | Production build                                   |
-| `pnpm db:push`  | Apply the schema in `src/db/schema.ts`             |
-| `pnpm db:seed`  | Wipe the data and reseed                           |
-| `pnpm db:reset` | Delete the database file, then push and seed again |
+TypeScript compilation and Git diff validation also passed.
 
-`db:reset` is the one you want when the data gets into a state you don't like. It's destructive and it's meant to be.
+### Known Product Gaps
 
-## Two things that will waste your time
+The following backend capabilities exist but do not currently have
+dedicated admin UI:
 
-Don't run `pnpm build` while `pnpm dev` is running. The build writes over the directory the dev server is using and the app starts throwing `MODULE_NOT_FOUND`. Nothing is actually broken. Stop the dev server, delete `.next`, start it again. If you want to typecheck while the server is up, use `npx tsc --noEmit` instead.
+- Admin member management
+- Admin class management
+- Admin payment actions
 
-If you're changing anything in `src/db/schema.ts`, run `pnpm db:push` afterwards or the app and the database will disagree with each other in confusing ways.
-
-## Layout
-
-```
-src/
-  app/          routes and pages
-  components/   shared components
-  db/           schema, client, seed data
-  lib/          helpers
-  server/       tRPC routers
-documents/      empty, for your own notes
-```
+These were intentionally not introduced as new features because the
+hackathon task focused on fixing the existing application rather than
+expanding its product scope.
